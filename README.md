@@ -4,14 +4,21 @@ iris verification: ศึกษาและพัฒนาระบบยืน�
 
 Resources:
 https://drive.google.com/drive/folders/1o5n7pTQaPUqQauUZvAsGvZ0l3dTGadgv?usp=sharing
+
 https://www.kaggle.com/datasets/sondosaabed/casia-iris-thousand
+
 https://github.com/worldcoin/open-iris
+
 https://world.org/blog/engineering/iris-recognition-inference-system
 
 ตัวอย่างไอเดียสำหรับ improvement ดูได้จาก
 
 https://ieeexplore.ieee.org/abstract/document/10354096
+
 https://link.springer.com/chapter/10.1007/978-3-031-46781-3_13
+
 https://ieeexplore.ieee.org/abstract/document/10665383
+
 https://link.springer.com/chapter/10.1007/978-981-96-4606-7_13
+
 https://link.springer.com/chapter/10.1007/978-981-96-4606-7_14
