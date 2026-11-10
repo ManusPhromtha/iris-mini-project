@@ -5,6 +5,7 @@ KAGGLE_IRIS_CSV_PATH = os.path.join(KAGGLE_DIR, "iris_thousands.csv")
 
 DATA_DIR = "./data"
 IRIS_DF_PATH = os.path.join(DATA_DIR, "iris.feather")
+IRIS_CODE_DF_PATH = os.path.join(DATA_DIR, "iris-code.feather")
 
 if not os.path.exists(KAGGLE_DIR):
     import kagglehub

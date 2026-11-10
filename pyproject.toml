@@ -8,11 +8,20 @@ dependencies = [
     "huggingface-hub>=2.4.0",
     "kagglehub>=1.0.3",
     "matplotlib>=3.11.2",
+    "numpy>=2.4.6",
     "onnx>=1.23.2",
     "onnxruntime>=1.31.1",
     "opencv-python>=5.0.0.93",
     "pandas>=3.1.1",
+    "pillow>=13.0.0",
     "pyarrow>=26.0.1",
     "pydantic==1.10.16",
+    "scikit-learn>=1.9.1",
+    "torch>=2.15.0",
+    "torchinfo>=1.8.0",
+    "torchvision>=0.29.2",
     "tqdm>=4.70.1",
 ]
+
+[tool.ruff]
+line-length = 119
