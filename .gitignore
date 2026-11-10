@@ -1,0 +1,5 @@
+.venv/
+
+data/
+kaggle/
+__pycache__
