@@ -7,20 +7,22 @@ class CNNModel(nn.Module):
         super().__init__()
         self.conv = nn.Sequential(
             nn.Conv2d(1, 32, kernel_size=7, stride=2, padding=1),
-            nn.ReLU(),
+            nn.LeakyReLU(),
             nn.MaxPool2d(kernel_size=3, stride=2),
             nn.Conv2d(32, 64, kernel_size=5, stride=2),
-            nn.ReLU(),
+            nn.LeakyReLU(),
             nn.MaxPool2d(kernel_size=3, stride=2),
             nn.Conv2d(64, 128, kernel_size=5),
-            nn.ReLU(),
+            nn.LeakyReLU(),
             nn.MaxPool2d(kernel_size=3),
             nn.Conv2d(128, 128, kernel_size=3),
-            nn.ReLU(),
+            nn.LeakyReLU(),
             nn.MaxPool2d(kernel_size=3),
         )
 
-        self.fc = nn.Sequential(nn.Linear(768, 768), nn.ReLU(), nn.Linear(768, 512), nn.ReLU(), nn.Linear(512, 128))
+        self.fc = nn.Sequential(
+            nn.Linear(768, 768), nn.LeakyReLU(), nn.Linear(768, 512), nn.LeakyReLU(), nn.Linear(512, 128)
+        )
 
         # self.fc6 = nn.Linear(768, 240)
         # self.fc7 = nn.Linear(240, 100)

@@ -1,8 +1,9 @@
+import copy
+
 import numpy as np
 import torch
 import torch.nn.functional as F
 from torch import nn, optim
-from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -33,13 +34,23 @@ def batch_predict(batchData, model: nn.Module, loss_fn):
     return loss, accuracy
 
 
-def train(model: nn.Module, loss_fn, optimizer, scheduler):
+def train(
+    model: nn.Module,
+    loss_fn,
+    optimizer,
+    scheduler,
+    start_epoch: int = 1,
+    epoch_count: int = 10,
+    model_path: str = "",
+    train_losses: list | None = None,
+    valid_losses: list | None = None,
+):
     model.to(device)
 
-    train_losses = []
-    valid_losses = []
+    train_losses = train_losses if train_losses is not None else []
+    valid_losses = valid_losses if valid_losses is not None else []
 
-    for epoch in range(1, 30):
+    for epoch in range(start_epoch, start_epoch + epoch_count):
         print(f"Epoch: {epoch}")
 
         # TRAIN
@@ -61,7 +72,7 @@ def train(model: nn.Module, loss_fn, optimizer, scheduler):
                 losses.append(loss.item())
 
                 pbar.set_description(
-                    f"Accuracy: ({accuracy:.4f}|{np.mean(accuracies):.4f}) , Loss: ({loss:.4f}|{np.mean(losses):.4f})"
+                    f"Accuracy: ({accuracy:.4f}|{np.mean(accuracies):.4f}), Loss: ({loss:.4f}|{np.mean(losses):.4f})"
                 )
 
             train_losses.append(np.mean(losses))
@@ -84,22 +95,71 @@ def train(model: nn.Module, loss_fn, optimizer, scheduler):
             scheduler.step(np.mean(losses))
             valid_losses.append(np.mean(losses))
 
+        if model_path != "" and (epoch == 1 or valid_losses[-1] < min(valid_losses[:-1])):
+            state = {
+                "epoch": epoch,
+                "model": copy.deepcopy(model.state_dict()),
+                "optimizer": copy.deepcopy(optimizer.state_dict()),
+                "scheduler": copy.deepcopy(scheduler.state_dict()),
+                "train_losses": train_losses,
+                "valid_losses": valid_losses,
+            }
+
+            print("Saving new best model...")
+            torch.save(state, model_path)
+
 
 if __name__ == "__main__":
-    from model_cnn import custom_model
-    from model_prep import getDataset
+    import argparse
 
-    BATCH_SIZE = 4
+    parser = argparse.ArgumentParser(
+        prog="Data Preparation Script",
+        description="Prepare the data for later training and evaluating",
+    )
+    parser.add_argument("-m", "--model-path", default="", help="Path to pytorch model checkpoint file")
+    args = parser.parse_args()
+    model_path = str(args.model_path)
 
-    TrainDataset, ValidDataset, TestDataset = getDataset(100)
+    import os
 
-    TrainDatasetLoader = DataLoader(TrainDataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=2, pin_memory=True)
-    ValidDatasetLoader = DataLoader(ValidDataset, batch_size=BATCH_SIZE, shuffle=False, num_workers=2, pin_memory=True)
-    TestDatasetLoader = DataLoader(TestDataset, batch_size=BATCH_SIZE, shuffle=False, num_workers=2, pin_memory=True)
+    from model_cnn import CNNModel
+    from model_prep import getDatasetLoader
 
+    TrainDatasetLoader, ValidDatasetLoader, TestDatasetLoader = getDatasetLoader(label_count=100, batch_size=4)
+
+    custom_model = CNNModel()
     loss_fn = nn.BCELoss()
-    optimizer = optim.Adam(custom_model.parameters(), lr=0.05)
-    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=2)
+
+    if model_path != "" and os.path.exists(model_path):
+        checkpoint = torch.load(model_path, weights_only=False)
+        custom_model.load_state_dict(checkpoint["model"])
+        optimizer = optim.Adam(custom_model.parameters(), lr=0.05)
+        optimizer.load_state_dict(checkpoint["optimizer"])
+        scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=2)
+        scheduler.load_state_dict(checkpoint["scheduler"])
+
+        start_epoch = checkpoint["epoch"]
+        train_losses = checkpoint["train_losses"]
+        valid_losses = checkpoint["valid_losses"]
+
+        print(f"Loaded epoch {checkpoint['epoch']} model, best validation loss: {min(valid_losses)}")
+    else:
+        optimizer = optim.Adam(custom_model.parameters(), lr=0.05)
+        scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=2)
+
+        start_epoch = 1
+        train_losses = []
+        valid_losses = []
 
     print(f"Running on {device}")
-    train(custom_model, loss_fn, optimizer=optimizer, scheduler=scheduler)
+    train(
+        custom_model,
+        loss_fn,
+        start_epoch=start_epoch,
+        epoch_count=10,
+        optimizer=optimizer,
+        scheduler=scheduler,
+        model_path=model_path,
+        train_losses=train_losses,
+        valid_losses=valid_losses,
+    )

@@ -33,8 +33,7 @@ def read_iris_df() -> pd.DataFrame:
 
 
 def get_iris_df() -> pd.DataFrame:
-    df = read_iris_df() if os.path.exists(filepath.IRIS_DF_PATH) else create_iris_df()
-    return df
+    return read_iris_df() if os.path.exists(filepath.IRIS_DF_PATH) else create_iris_df()
 
 
 # ---- Iris Code DataFrame ----
@@ -47,7 +46,6 @@ def create_iris_code_df() -> pd.DataFrame:
     df["Output_Metadata"] = None
 
     save_iris_code_df(df)
-
     return df
 
 
@@ -66,8 +64,7 @@ def read_iris_code_df() -> pd.DataFrame:
 
 
 def get_iris_code_df() -> pd.DataFrame:
-    df = read_iris_code_df() if os.path.exists(filepath.IRIS_CODE_DF_PATH) else create_iris_code_df()
-    return df
+    return read_iris_code_df() if os.path.exists(filepath.IRIS_CODE_DF_PATH) else create_iris_code_df()
 
 
 def infer_iris_code(iris_df: pd.DataFrame, count: int) -> pd.DataFrame:
@@ -116,11 +113,15 @@ if __name__ == "__main__":
 
     print(iris_code_df.shape)
     print(iris_code_df.sample(1))
-    print(f"Inferred Rows: {(~iris_code_df['Output_Metadata'].isna()).sum()}")
-    print(f"Remaining Rows: {iris_code_df['Output_Metadata'].isna().sum()}")
+
+    def print_infer_stats(iris_code_df: pd.DataFrame):
+        inferred_count = (~iris_code_df["Output_Metadata"].isna()).sum()
+        remaining_count = iris_code_df["Output_Metadata"].isna().sum()
+        print(f"Inferred|Remaining Images: {inferred_count}|{remaining_count}")
+
+    print_infer_stats(iris_code_df)
 
     if infer_count > 0:
         iris_code_df = infer_iris_code(iris_code_df, infer_count)
-        print(f"Inferred Rows: {(~iris_code_df['Output_Metadata'].isna()).sum()}")
-        print(f"Remaining Rows: {iris_code_df['Output_Metadata'].isna().sum()}")
+        print_infer_stats(iris_code_df)
         print(iris_code_df[~iris_code_df["Output_Metadata"].isna()].sample(1))

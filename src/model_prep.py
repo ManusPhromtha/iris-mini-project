@@ -7,7 +7,7 @@ import pandas as pd
 import torch
 from PIL import Image
 from sklearn.model_selection import train_test_split
-from torch.utils.data import Dataset
+from torch.utils.data import DataLoader, Dataset
 from torchvision import transforms
 
 from data_prep import iris_df
@@ -67,11 +67,27 @@ def getDataset(label_count: int = -1) -> tuple[LabelImageGroupDataset, LabelImag
     prepare_dir(TRAIN_IMAGE_FOLDER, X_train)
     prepare_dir(VALID_IMAGE_FOLDER, X_valid)
     prepare_dir(TEST_IMAGE_FOLDER, X_test)
-
-    transform = transforms.Compose([transforms.Resize((640, 480)), transforms.Grayscale(1), transforms.ToTensor()])
+    transform = transforms.Compose(
+        [
+            transforms.Resize((640, 480)),
+            transforms.Grayscale(1),
+            transforms.ToTensor(),
+            # transforms.Normalize(0.5, 0.25),
+        ]
+    )
 
     TrainDataset = LabelImageGroupDataset(X_train, TRAIN_IMAGE_FOLDER, transform=transform)
     ValidDataset = LabelImageGroupDataset(X_valid, VALID_IMAGE_FOLDER, transform=transform)
     TestDataset = LabelImageGroupDataset(X_test, TEST_IMAGE_FOLDER, transform=transform)
 
     return TrainDataset, ValidDataset, TestDataset
+
+
+def getDatasetLoader(label_count=-1, batch_size=4) -> tuple[DataLoader, DataLoader, DataLoader]:
+    TrainDataset, ValidDataset, TestDataset = getDataset(100)
+
+    TrainDatasetLoader = DataLoader(TrainDataset, batch_size=batch_size, shuffle=True, num_workers=2, pin_memory=True)
+    ValidDatasetLoader = DataLoader(ValidDataset, batch_size=batch_size, shuffle=False, num_workers=2, pin_memory=True)
+    TestDatasetLoader = DataLoader(TestDataset, batch_size=batch_size, shuffle=False, num_workers=2, pin_memory=True)
+
+    return TrainDatasetLoader, ValidDatasetLoader, TestDatasetLoader
