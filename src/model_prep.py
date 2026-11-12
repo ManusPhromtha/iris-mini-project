@@ -1,6 +1,5 @@
 import os
 import shutil
-import tempfile
 
 import numpy as np
 import pandas as pd
@@ -11,11 +10,11 @@ from torch.utils.data import DataLoader, Dataset
 from torchvision import transforms
 
 from data_prep import iris_df
+from filepath import TEMP_DIR
 
-with tempfile.TemporaryDirectory() as tmpdir:
-    TRAIN_IMAGE_FOLDER = os.path.join(tmpdir, "train/")
-    VALID_IMAGE_FOLDER = os.path.join(tmpdir, "valid/")
-    TEST_IMAGE_FOLDER = os.path.join(tmpdir, "test/")
+TRAIN_IMAGE_FOLDER = os.path.join(TEMP_DIR, "train/")
+VALID_IMAGE_FOLDER = os.path.join(TEMP_DIR, "valid/")
+TEST_IMAGE_FOLDER = os.path.join(TEMP_DIR, "test/")
 
 
 class LabelImageGroupDataset(Dataset):

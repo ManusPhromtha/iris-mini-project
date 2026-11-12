@@ -7,6 +7,8 @@ DATA_DIR = "./data"
 IRIS_DF_PATH = os.path.join(DATA_DIR, "iris.feather")
 IRIS_CODE_DF_PATH = os.path.join(DATA_DIR, "iris-code.feather")
 
+TEMP_DIR = "./.temp"
+
 if not os.path.exists(KAGGLE_DIR):
     import kagglehub
 
@@ -14,3 +16,6 @@ if not os.path.exists(KAGGLE_DIR):
 
 if not os.path.exists(DATA_DIR):
     os.mkdir(DATA_DIR)
+
+if not os.path.exists(TEMP_DIR):
+    os.mkdir(TEMP_DIR)

@@ -1,5 +1,3 @@
-import copy
-
 import numpy as np
 import torch
 import torch.nn.functional as F
@@ -42,6 +40,7 @@ def train(
     start_epoch: int = 1,
     epoch_count: int = 10,
     model_path: str = "",
+    checkpoint_path: str = "",
     train_losses: list | None = None,
     valid_losses: list | None = None,
 ):
@@ -95,18 +94,20 @@ def train(
             scheduler.step(np.mean(losses))
             valid_losses.append(np.mean(losses))
 
-        if model_path != "" and (epoch == 1 or valid_losses[-1] < min(valid_losses[:-1])):
+        if checkpoint_path != "":
             state = {
                 "epoch": epoch,
-                "model": copy.deepcopy(model.state_dict()),
-                "optimizer": copy.deepcopy(optimizer.state_dict()),
-                "scheduler": copy.deepcopy(scheduler.state_dict()),
+                "model": model.state_dict(),
+                "optimizer": optimizer.state_dict(),
+                "scheduler": scheduler.state_dict(),
                 "train_losses": train_losses,
                 "valid_losses": valid_losses,
             }
+            torch.save(state, checkpoint_path)
 
+        if model_path != "" and (epoch == 1 or valid_losses[-1] < min(valid_losses[:-1])):
             print("Saving new best model...")
-            torch.save(state, model_path)
+            torch.save(model.state_dict(), model_path)
 
 
 if __name__ == "__main__":
@@ -116,8 +117,10 @@ if __name__ == "__main__":
         prog="Data Preparation Script",
         description="Prepare the data for later training and evaluating",
     )
-    parser.add_argument("-m", "--model-path", default="", help="Path to pytorch model checkpoint file")
+    parser.add_argument("-c", "--checkpoint-path", default="", help="Path to pytorch train checkpoint file")
+    parser.add_argument("-m", "--model-path", default="", help="Path to pytorch model file")
     args = parser.parse_args()
+    checkpoint_path = str(args.checkpoint_path)
     model_path = str(args.model_path)
 
     import os
@@ -130,8 +133,8 @@ if __name__ == "__main__":
     custom_model = CNNModel()
     loss_fn = nn.BCELoss()
 
-    if model_path != "" and os.path.exists(model_path):
-        checkpoint = torch.load(model_path, weights_only=False)
+    if checkpoint_path != "" and os.path.exists(checkpoint_path):
+        checkpoint = torch.load(checkpoint_path, weights_only=False)
         custom_model.load_state_dict(checkpoint["model"])
         optimizer = optim.Adam(custom_model.parameters(), lr=0.05)
         optimizer.load_state_dict(checkpoint["optimizer"])
@@ -159,6 +162,7 @@ if __name__ == "__main__":
         epoch_count=10,
         optimizer=optimizer,
         scheduler=scheduler,
+        checkpoint_path=checkpoint_path,
         model_path=model_path,
         train_losses=train_losses,
         valid_losses=valid_losses,
