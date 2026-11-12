@@ -2,6 +2,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 from torch import nn, optim
+from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -33,6 +34,8 @@ def batch_predict(batchData, model: nn.Module, loss_fn):
 
 
 def train(
+    TrainDatasetLoader: DataLoader,
+    ValidDatasetLoader: DataLoader,
     model: nn.Module,
     loss_fn,
     optimizer,
@@ -44,7 +47,7 @@ def train(
     train_losses: list | None = None,
     valid_losses: list | None = None,
 ):
-    model.to(device)
+    model = model.to(device)
 
     train_losses = train_losses if train_losses is not None else []
     valid_losses = valid_losses if valid_losses is not None else []
@@ -74,7 +77,7 @@ def train(
                     f"Accuracy: ({accuracy:.4f}|{np.mean(accuracies):.4f}), Loss: ({loss:.4f}|{np.mean(losses):.4f})"
                 )
 
-            train_losses.append(np.mean(losses))
+            train_losses.append(float(np.mean(losses)))
 
         # VALIDATE
         model.eval()
@@ -92,7 +95,7 @@ def train(
                 )
 
             scheduler.step(np.mean(losses))
-            valid_losses.append(np.mean(losses))
+            valid_losses.append(float(np.mean(losses)))
 
         if checkpoint_path != "":
             state = {
@@ -119,23 +122,27 @@ if __name__ == "__main__":
     )
     parser.add_argument("-c", "--checkpoint-path", default="", help="Path to pytorch train checkpoint file")
     parser.add_argument("-m", "--model-path", default="", help="Path to pytorch model file")
+    parser.add_argument("-e", "--epoch-count", default=10, help="The epoch count to train for")
     args = parser.parse_args()
     checkpoint_path = str(args.checkpoint_path)
     model_path = str(args.model_path)
+    epoch_count = int(args.epoch_count)
 
     import os
 
     from model_cnn import CNNModel
     from model_prep import getDatasetLoader
 
-    TrainDatasetLoader, ValidDatasetLoader, TestDatasetLoader = getDatasetLoader(label_count=100, batch_size=4)
+    TrainDatasetLoader, ValidDatasetLoader, _ = getDatasetLoader(label_count=100, batch_size=4)
 
     custom_model = CNNModel()
     loss_fn = nn.BCELoss()
 
     if checkpoint_path != "" and os.path.exists(checkpoint_path):
-        checkpoint = torch.load(checkpoint_path, weights_only=False)
+        checkpoint = torch.load(checkpoint_path, weights_only=True, map_location=device)
         custom_model.load_state_dict(checkpoint["model"])
+
+        custom_model = custom_model.to(device)
         optimizer = optim.Adam(custom_model.parameters(), lr=0.05)
         optimizer.load_state_dict(checkpoint["optimizer"])
         scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=2)
@@ -147,6 +154,7 @@ if __name__ == "__main__":
 
         print(f"Loaded epoch {checkpoint['epoch']} model, best validation loss: {min(valid_losses)}")
     else:
+        custom_model = custom_model.to(device)
         optimizer = optim.Adam(custom_model.parameters(), lr=0.05)
         scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=2)
 
@@ -155,11 +163,14 @@ if __name__ == "__main__":
         valid_losses = []
 
     print(f"Running on {device}")
+
     train(
+        TrainDatasetLoader,
+        ValidDatasetLoader,
         custom_model,
-        loss_fn,
+        loss_fn=loss_fn,
         start_epoch=start_epoch,
-        epoch_count=10,
+        epoch_count=epoch_count,
         optimizer=optimizer,
         scheduler=scheduler,
         checkpoint_path=checkpoint_path,
