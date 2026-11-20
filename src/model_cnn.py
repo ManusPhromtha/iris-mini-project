@@ -21,7 +21,11 @@ class CNNModel(nn.Module):
         )
 
         self.fc = nn.Sequential(
-            nn.Linear(768, 768), nn.LeakyReLU(), nn.Linear(768, 512), nn.LeakyReLU(), nn.Linear(512, 128)
+            nn.Linear(768, 768),
+            nn.LeakyReLU(),
+            nn.Linear(768, 512),
+            nn.LeakyReLU(),
+            nn.Linear(512, 128),
         )
 
         # self.fc6 = nn.Linear(768, 240)

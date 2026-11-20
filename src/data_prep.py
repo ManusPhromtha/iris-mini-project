@@ -97,8 +97,24 @@ def infer_iris_code(iris_df: pd.DataFrame, count: int) -> pd.DataFrame:
     return iris_df
 
 
+def get_iris_no_error_df():
+    if os.path.exists(filepath.IRIS_NO_ERROR_DF_PATH):
+        return pd.read_feather(filepath.IRIS_NO_ERROR_DF_PATH)
+    else:
+        iris_df = get_iris_df()
+        iris_code_df = get_iris_code_df()
+        iris_code_no_error_df = iris_code_df[
+            ~iris_code_df["Output_Metadata"].isna() & iris_code_df["Output_Error"].isna()
+        ]
+        iris_no_error_df = iris_df[iris_df.index.isin(iris_code_no_error_df.index)]
+        iris_no_error_df.to_feather(filepath.IRIS_NO_ERROR_DF_PATH)
+        return iris_no_error_df
+
+
 iris_df = get_iris_df()
 iris_code_df = get_iris_code_df()
+iris_no_error_df = get_iris_no_error_df()
+
 
 if __name__ == "__main__":
     import argparse

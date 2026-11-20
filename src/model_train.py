@@ -8,8 +8,14 @@ from tqdm import tqdm
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
+def is_vector_similar(a: torch.Tensor, b: torch.Tensor):
+    cosim = F.cosine_similarity(a, b, dim=0)
+    cosim_norm = (cosim + 1) / 2
+    return torch.clamp(cosim_norm, min=0, max=1)
+
+
 def batch_predict(batchData, model: nn.Module, loss_fn):
-    group_images, group_labels = batchData
+    group_images, group_labels, _ = batchData
     group_images, group_labels = group_images.to(device), group_labels.to(device)
 
     images = torch.flatten(group_images, end_dim=1)
@@ -24,7 +30,7 @@ def batch_predict(batchData, model: nn.Module, loss_fn):
     pair_true = torch.empty(pair_comb.size()[0], dtype=float)
     for idx in torch.arange(pair_comb.size()[0]):
         a, b = pair_comb[idx]
-        pair_pred[idx] = torch.clamp((F.cosine_similarity(outputs[a], outputs[b], dim=0) + 1) / 2, min=0, max=1)
+        pair_pred[idx] = is_vector_similar(outputs[a], outputs[b])
         pair_true[idx] = labels[a].eq(labels[b])
 
     loss = loss_fn(pair_pred, pair_true)
@@ -117,8 +123,8 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(
-        prog="Data Preparation Script",
-        description="Prepare the data for later training and evaluating",
+        prog="Model Training Script",
+        description="Train the model using data from previous stage",
     )
     parser.add_argument("-c", "--checkpoint-path", default="", help="Path to pytorch train checkpoint file")
     parser.add_argument("-m", "--model-path", default="", help="Path to pytorch model file")
@@ -131,9 +137,9 @@ if __name__ == "__main__":
     import os
 
     from model_cnn import CNNModel
-    from model_prep import getDatasetLoader
+    from model_prep import get_dataset_loader
 
-    TrainDatasetLoader, ValidDatasetLoader, _ = getDatasetLoader(label_count=100, batch_size=4)
+    TrainDatasetLoader, ValidDatasetLoader, _ = get_dataset_loader(batch_size=4)
 
     custom_model = CNNModel()
     loss_fn = nn.BCELoss()
