@@ -128,7 +128,7 @@ if __name__ == "__main__":
     )
     parser.add_argument("-c", "--checkpoint-path", default="", help="Path to pytorch train checkpoint file")
     parser.add_argument("-m", "--model-path", default="", help="Path to pytorch model file")
-    parser.add_argument("-e", "--epoch-count", default=10, help="The epoch count to train for")
+    parser.add_argument("-n", "--epoch-count", default=10, help="The epoch count to train for")
     args = parser.parse_args()
     checkpoint_path = str(args.checkpoint_path)
     model_path = str(args.model_path)

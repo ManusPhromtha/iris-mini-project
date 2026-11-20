@@ -25,6 +25,8 @@ def model_alone(vectors, labels, loss_fn, threshold=0.5):
     return pair_prob.detach().numpy(), pair_true.detach().numpy()
 
 
+# TODO: create a evaluation function for iris + CNN model
+
 if __name__ == "__main__":
     import argparse
 
@@ -33,12 +35,14 @@ if __name__ == "__main__":
         description="Evaluate the model with test data from previous stage",
     )
     parser.add_argument("-v", "--vector-path", help="Path to save model vector")
-    parser.add_argument("-t", "--threshold", default=0.5, help="Prediction threshold cutoff")
+    parser.add_argument("-mt", "--model-threshold", default=0.5, help="Model prediction threshold (0 to 1)")
+    parser.add_argument(
+        "-ht", "--hamming-threshold", default=0.35, help="Hamming distance prediction threshold (around 0.3 to 0.4)"
+    )
     args = parser.parse_args()
     vector_path = str(args.vector_path)
-    threshold = float(args.threshold)
-
-    print(f"Set threshold {threshold}")
+    model_threshold = float(args.model_threshold)
+    hamming_threshold = float(args.hamming_threshold)
 
     from sklearn import metrics
 
@@ -48,14 +52,19 @@ if __name__ == "__main__":
     iris_code_df = iris_code_df.set_index(["id"])
 
     print("----- Model Alone -----")
+    print(f"Set model threshold {model_threshold}")
+
     vector_df = pd.read_feather(vector_path)
     vector_df = vector_df[vector_df.index.isin(iris_code_df.index)]
 
     loss_fn = torch.nn.BCELoss()
     y_prob, y_true = model_alone(
-        torch.tensor(vector_df["vectors"].to_list()), torch.tensor(vector_df["label"].to_list()), loss_fn
+        torch.tensor(vector_df["vectors"].to_list()),
+        torch.tensor(vector_df["label"].to_list()),
+        loss_fn,
+        threshold=model_threshold,
     )
-    y_pred = np.greater_equal(y_prob, threshold)
+    y_pred = np.greater_equal(y_prob, model_threshold)
 
     print("Confusion matrix")
     print(metrics.confusion_matrix(y_true, y_pred, labels=[True, False]))
@@ -64,12 +73,14 @@ if __name__ == "__main__":
     print(f"ROC/AUC score: {metrics.roc_auc_score(y_true, y_prob):.4f}")
 
     # print("----- Iris Alone -----")
+    print(f"Set hamming distance threshold {hamming_threshold}")
+
     iris_pair_df = get_iris_pair_df(iris_code_df.index.to_list())
     iris_pair_df = iris_pair_df[~iris_pair_df["hamming_distance"].isna()]
 
     y_dist = iris_pair_df["hamming_distance"]
     y_true = iris_pair_df["label"]
-    y_pred = y_dist < 0.35
+    y_pred = y_dist < hamming_threshold
 
     print("Confusion matrix")
     print(metrics.confusion_matrix(y_true, y_pred, labels=[True, False]))

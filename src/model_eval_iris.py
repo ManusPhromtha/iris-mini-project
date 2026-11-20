@@ -68,7 +68,7 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(prog="Iris Code Hamming Distance Script")
-    parser.add_argument("-n", "--count", default=100, help="Number of rows to calculate distance")
+    parser.add_argument("-n", "--count", default=1000, help="Number of rows to calculate distance")
     args = parser.parse_args()
     count = int(args.count)
 

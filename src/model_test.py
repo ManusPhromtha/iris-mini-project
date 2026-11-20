@@ -63,7 +63,7 @@ if __name__ == "__main__":
         prog="Model Evaluation Script",
         description="Evaluate the model with test data from previous stage",
     )
-    parser.add_argument("-m", "--model-path", default="", help="Path to pytorch model file")
+    parser.add_argument("-m", "--model-path", help="Path to pytorch model file")
     parser.add_argument("-v", "--vector-path", default="", help="Path to save model vector")
     args = parser.parse_args()
     model_path = str(args.model_path)

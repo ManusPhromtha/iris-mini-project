@@ -123,7 +123,7 @@ if __name__ == "__main__":
         prog="Data Preparation Script",
         description="Prepare the data for later training and evaluating",
     )
-    parser.add_argument("-i", "--infer-count", default=0, help="Number of rows to infer iris code")
+    parser.add_argument("-n", "--infer-count", default=0, help="Number of rows to infer iris code")
     args = parser.parse_args()
     infer_count = int(args.infer_count)
 
