@@ -59,7 +59,7 @@ def train(
     valid_losses = valid_losses if valid_losses is not None else []
 
     for epoch in range(start_epoch, start_epoch + epoch_count):
-        print(f"Epoch: {epoch}")
+        print(f"Epoch: {epoch} (Learning Rate: {optimizer.param_groups[0]['lr']})")
 
         # TRAIN
         model.train()
@@ -126,43 +126,48 @@ if __name__ == "__main__":
         prog="Model Training Script",
         description="Train the model using data from previous stage",
     )
+    parser.add_argument("model_type", default="custom", help="Type of model")
+    parser.add_argument("--pretrained", action=argparse.BooleanOptionalAction)
     parser.add_argument("-c", "--checkpoint-path", default="", help="Path to pytorch train checkpoint file")
     parser.add_argument("-m", "--model-path", default="", help="Path to pytorch model file")
     parser.add_argument("-n", "--epoch-count", default=10, help="The epoch count to train for")
+
     args = parser.parse_args()
+    model_type = str(args.model_type)
+    pretrained = bool(args.pretrained)
     checkpoint_path = str(args.checkpoint_path)
     model_path = str(args.model_path)
     epoch_count = int(args.epoch_count)
 
     import os
 
-    from model_cnn import CNNModel
+    from model_cnn import get_model
     from model_prep import get_dataset_loader
 
     TrainDatasetLoader, ValidDatasetLoader, _ = get_dataset_loader(batch_size=4)
 
-    custom_model = CNNModel()
+    model = get_model(model_type, pretrained=pretrained)
     loss_fn = nn.BCELoss()
 
     if checkpoint_path != "" and os.path.exists(checkpoint_path):
         checkpoint = torch.load(checkpoint_path, weights_only=True, map_location=device)
-        custom_model.load_state_dict(checkpoint["model"])
+        model.load_state_dict(checkpoint["model"])
 
-        custom_model = custom_model.to(device)
-        optimizer = optim.Adam(custom_model.parameters(), lr=0.05)
+        model = model.to(device)
+        optimizer = optim.Adam(model.parameters(), lr=0.05)
         optimizer.load_state_dict(checkpoint["optimizer"])
-        scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=2)
+        scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=2, factor=0.5)
         scheduler.load_state_dict(checkpoint["scheduler"])
 
-        start_epoch = checkpoint["epoch"]
+        start_epoch = checkpoint["epoch"] + 1
         train_losses = checkpoint["train_losses"]
         valid_losses = checkpoint["valid_losses"]
 
         print(f"Loaded epoch {checkpoint['epoch']} model, best validation loss: {min(valid_losses)}")
     else:
-        custom_model = custom_model.to(device)
-        optimizer = optim.Adam(custom_model.parameters(), lr=0.05)
-        scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=2)
+        custom_model = model.to(device)
+        optimizer = optim.Adam(model.parameters(), lr=0.05)
+        scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=2, factor=0.5)
 
         start_epoch = 1
         train_losses = []
@@ -173,7 +178,7 @@ if __name__ == "__main__":
     train(
         TrainDatasetLoader,
         ValidDatasetLoader,
-        custom_model,
+        model,
         loss_fn=loss_fn,
         start_epoch=start_epoch,
         epoch_count=epoch_count,

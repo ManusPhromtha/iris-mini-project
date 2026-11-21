@@ -4,7 +4,6 @@ import torch
 from torch import nn
 from tqdm import tqdm
 
-from model_cnn import CNNModel
 from model_prep import LabelImageGroupDataset, create_dataset, create_dataset_loader, get_data
 from model_train import batch_predict
 
@@ -63,15 +62,19 @@ if __name__ == "__main__":
         prog="Model Evaluation Script",
         description="Evaluate the model with test data from previous stage",
     )
+    parser.add_argument("model_type", default="custom", help="Type of model")
     parser.add_argument("-m", "--model-path", help="Path to pytorch model file")
     parser.add_argument("-v", "--vector-path", default="", help="Path to save model vector")
     args = parser.parse_args()
+    model_type = str(args.model_type)
     model_path = str(args.model_path)
     vector_path = str(args.vector_path)
 
+    from model_cnn import get_model
+
     model_params = torch.load(model_path, weights_only=True, map_location=device)
 
-    model = CNNModel()
+    model = get_model(model_type, pretrained=False)
     loss_fn = nn.BCELoss()
     model.load_state_dict(model_params)
     model = model.to(device)

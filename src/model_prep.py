@@ -23,7 +23,6 @@ class LabelImageGroupDataset(Dataset):
     def __init__(self, X: list[tuple[str, pd.DataFrame]], img_dir, transform=None, target_transform=None):
         self.img_dir = img_dir
         self.transform = transform
-        self.target_transform = target_transform
 
         self.label_groups = []
         filenames = []
@@ -114,9 +113,9 @@ def create_dataset(
     transform = transforms.Compose(
         [
             transforms.Resize((640, 480)),
-            transforms.Grayscale(1),
+            transforms.Grayscale(3),
             transforms.ToTensor(),
-            # transforms.Normalize(0.5, 0.25),
+            transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
         ]
     )
 
