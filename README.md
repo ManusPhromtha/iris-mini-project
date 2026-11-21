@@ -49,14 +49,18 @@ After that run `model_train.py` to train on training data.
 The model information will be in `model_cnn.py`
 
 ```sh
-uv run src/model_cnn.py
+# (args0) model-type | "custom" or the name of pytorch pretrained model
+# --pretrained, --no-pretrained | Specify to load the pretrained model weight and train on the classifier only
+uv run src/model_cnn.py custom
 ```
 
 ```sh
+# (args0) model-type | "custom" or the name of pytorch pretrained model
+# --pretrained, --no-pretrained | Specify to load the pretrained model weight and train on the classifier only
 # -c --checkpoint-path | Path to load/save training state (omit to load/save nothing)
 # -m --model-path | Path to load/save best model (omit to load/save nothing)
 # -n --epoch-count | Number of epochs to train the model
-uv run src/model_train.py -c data/model/custom.checkpoint -m data/model/custom.model -n 10
+uv run src/model_train.py custom -c data/model/custom.checkpoint -m data/model/custom.model -n 10
 ```
 
 Modify `model_cnn.py` and experiment with different model.
@@ -66,9 +70,10 @@ Modify `model_cnn.py` and experiment with different model.
 Run `model_test.py` to encode the image into vector and store into the specified path
 
 ```sh
+# (args0) model-type | "custom" or the name of pytorch pretrained model
 # -m --model-path | Path to load model
 # -v --vector-path | Path to save the image vector of training dataset
-uv run src/model_test.py -m data/model/custom.model -v data/model/custom.vector
+uv run src/model_test.py custom -m data/model/custom.model -v data/model/custom.vector
 ```
 
 Run `model_eval_iris.py` to calculate the hamming distance of all pair combination in test dataset.
@@ -86,7 +91,9 @@ And also evaluate iris code distance based on a specified threshold on all pair 
 # -v --vector-path | Path to load the image vector of training dataset
 # -mt --model-threshold | Model prediction threshold (0 to 1)
 # -ht --hamming-threshold | Hamming distance prediction threshold (recommend around 0.3 to 0.4)
-uv run src/model_eval.py -v data/model/custom.vector -mt 0.5 -ht 0.35
+# -lt --lower-threshold | Min hamming distance indecisive threshold
+# -gt --greater-threshold | Max hamming distance indecisive threshold
+uv run src/model_eval.py -v data/model/custom.vector -mt 0.5 -ht 0.35 -lt 0.33 -gt 0.37
 ```
 
 ## Resources from professor
