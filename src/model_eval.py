@@ -26,6 +26,24 @@ def model_alone(vectors, labels, loss_fn, threshold=0.5):
 
 
 # TODO: create a evaluation function for iris + CNN model
+def iris_and_model(
+    iris_pair_df: pd.DataFrame, vector_dict: dict, model_threshold=0.5, min_threshold=0.33, max_threshold=0.37
+):
+    indecisive_df = iris_pair_df[
+        (min_threshold <= iris_pair_df["hamming_distance"]) & (iris_pair_df["hamming_distance"] <= max_threshold)
+    ]
+    decisive_df = iris_pair_df[~iris_pair_df.index.isin(indecisive_df.index)]
+    y_pred = list(decisive_df["hamming_distance"] < min_threshold)
+    y_true = list(decisive_df["label"])
+
+    tqdm.pandas()
+    for _, row in tqdm(indecisive_df.iterrows(), total=indecisive_df.shape[0]):
+        prob = is_vector_similar(vector_dict[row["a_id"]], vector_dict[row["b_id"]])
+        y_pred.append(prob.item() >= model_threshold)
+        y_true.append(row["label"])
+
+    return y_pred, y_true
+
 
 if __name__ == "__main__":
     import argparse
@@ -39,10 +57,15 @@ if __name__ == "__main__":
     parser.add_argument(
         "-ht", "--hamming-threshold", default=0.35, help="Hamming distance prediction threshold (around 0.3 to 0.4)"
     )
+    parser.add_argument("-lt", "--lower-threshold", default=0.33, help="Min hamming distance prediction threshold")
+    parser.add_argument("-gt", "--greater-threshold", default=0.37, help="Max hamming distance prediction threshold")
+
     args = parser.parse_args()
     vector_path = str(args.vector_path)
     model_threshold = float(args.model_threshold)
     hamming_threshold = float(args.hamming_threshold)
+    min_threshold = float(args.lower_threshold)
+    max_threshold = float(args.greater_threshold)
 
     from sklearn import metrics
 
@@ -72,7 +95,7 @@ if __name__ == "__main__":
     print(metrics.classification_report(y_true, y_pred, labels=[True, False]))
     print(f"ROC/AUC score: {metrics.roc_auc_score(y_true, y_prob):.4f}")
 
-    # print("----- Iris Alone -----")
+    print("----- Iris Alone -----")
     print(f"Set hamming distance threshold {hamming_threshold}")
 
     iris_pair_df = get_iris_pair_df(iris_code_df.index.to_list())
@@ -81,6 +104,22 @@ if __name__ == "__main__":
     y_dist = iris_pair_df["hamming_distance"]
     y_true = iris_pair_df["label"]
     y_pred = y_dist < hamming_threshold
+
+    print("Confusion matrix")
+    print(metrics.confusion_matrix(y_true, y_pred, labels=[True, False]))
+    print("Classification report")
+    print(metrics.classification_report(y_true, y_pred, labels=[True, False]))
+
+    print("----- Iris + Model -----")
+    print(f"Set min|max distance threshold {min_threshold}|{max_threshold}")
+
+    y_pred, y_true = iris_and_model(
+        iris_pair_df,
+        vector_df["vectors"].apply(lambda vector: torch.tensor(list(vector))).to_dict(),
+        model_threshold=model_threshold,
+        min_threshold=min_threshold,
+        max_threshold=max_threshold,
+    )
 
     print("Confusion matrix")
     print(metrics.confusion_matrix(y_true, y_pred, labels=[True, False]))
